@@ -8,8 +8,6 @@ COPY . .
 
 RUN pnpm install
 
-RUN pnpm build
+EXPOSE 5173
 
-EXPOSE 8787
-
-CMD ["pnpm", "start"]
+CMD ["pnpm", "dev", "--host"]
