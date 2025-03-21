@@ -24,7 +24,7 @@ RUN npm install -g pnpm
 COPY --from=builder /app /app
 
 # Exposer le port (Webstudio utilise 8787 par défaut en prod)
-EXPOSE 3000
+EXPOSE 5173
 
 # Commande pour lancer le serveur en mode prod
 CMD ["pnpm", "dev"]
