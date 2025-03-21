@@ -5,4 +5,8 @@ export default defineConfig({
   resolve: {
     conditions: ["webstudio"],
   },
+  server: {
+    host: true,
+    https: false,
+  },
 });
