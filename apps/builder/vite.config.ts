@@ -27,8 +27,7 @@ export default defineConfig(({ mode }) => {
   }
 
   if (mode === "development") {
-    // Enable self-signed certificates for development service 2 service fetch calls.
-    // This is particularly important for secure communication with the oauth.ws.token endpoint.
+    // Désactivation des rejets TLS (utile en dev pour certains fetch sécurisés)
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
 
@@ -75,8 +74,6 @@ export default defineConfig(({ mode }) => {
           find: "~",
           replacement: resolve("app"),
         },
-
-        // before 2,899.74 kB, after 2,145.98 kB
         {
           find: "@supabase/node-fetch",
           replacement: resolve("./app/shared/empty.ts"),
@@ -87,25 +84,16 @@ export default defineConfig(({ mode }) => {
       "process.env.NODE_ENV": JSON.stringify(mode),
     },
     server: {
-      // Service-to-service OAuth token call requires a specified host for the wstd.dev domain
-      host: "wstd.dev",
-      // Needed for SSL
+      // Écoute sur toutes les interfaces pour être accessible de l'extérieur
+      host: "0.0.0.0",
+      // Désactivation complète de HTTPS pour utiliser HTTP
+      https: false,
+      // Conservez le proxy si nécessaire ou supprimez-le
       proxy: {},
-
-      https: {
-        key: readFileSync("../../https/privkey.pem"),
-        cert: readFileSync("../../https/fullchain.pem"),
-      },
-      cors: ((
-        req: IncomingMessage,
-        callback: (error: Error | null, options: CorsOptions | null) => void
-      ) => {
-        // Handle CORS preflight requests in development to mimic Remix production behavior
+      cors: ((req: IncomingMessage, callback: (error: Error | null, options: CorsOptions | null) => void) => {
         if (req.method === "OPTIONS" || req.method === "POST") {
           if (req.headers.origin != null && req.url != null) {
             const url = new URL(req.url, `https://${req.headers.host}`);
-
-            // Allow CORS for /builder-logout path when requested from the authorization server
             if (url.pathname === "/builder-logout" && isBuilderUrl(url.href)) {
               return callback(null, {
                 origin: getAuthorizationServerOrigin(url.href),
@@ -114,17 +102,13 @@ export default defineConfig(({ mode }) => {
               });
             }
           }
-
           if (req.method === "OPTIONS") {
-            // Respond with method not allowed for other preflight requests
             return callback(null, {
               preflightContinue: false,
               optionsSuccessStatus: 405,
             });
           }
         }
-
-        // Disable CORS for all other requests
         return callback(null, {
           origin: false,
         });
